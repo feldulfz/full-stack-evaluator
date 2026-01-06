@@ -2,7 +2,6 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Threading.Tasks;
-
 using TaskManager.Models;
 using TaskManager.Data;
 using task_manager_api.DTOs;
@@ -54,7 +53,7 @@ namespace TaskManager.API
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTaskDto dto)
         {
-            var creatorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var creatorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             // Validate assigned user exists
             var assignedUserExists = await _context.Users
@@ -80,16 +79,22 @@ namespace TaskManager.API
         [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTaskDto updated)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
 
             var task = await _context.Tasks.FindAsync(id);
-
             if (task == null) return NotFound();
 
-            if (task.UserId != userId) return Forbid();
+            // Allow assigned user OR creator to edir
+            if (task.UserId != userId && task.CreatedByUserId != userId) return Forbid();            
+
+            // Validate assigned user existence
+            var assignedUserExists = await _context.Users.AnyAsync(u => u.Id == updated.AssignedUserId);
+
+            if (!assignedUserExists) return BadRequest("Assigned user does not exist.");
 
             task.Title = updated.Title;
             task.IsDone = updated.IsDone;
+            task.UserId = updated.AssignedUserId;
 
             await _context.SaveChangesAsync();
 
@@ -99,8 +104,13 @@ namespace TaskManager.API
         [HttpDelete("{id}")]
         public async Task<IActionResult> Delete(int id)
         {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier)!);
+
             var task = await _context.Tasks.FindAsync(id);
             if (task == null) return NotFound();
+
+            // Only the creator can delete
+            if (task.CreatedByUserId != userId) return Forbid();            
 
             _context.Tasks.Remove(task);
             await _context.SaveChangesAsync();

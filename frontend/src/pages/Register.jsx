@@ -1,10 +1,10 @@
 import { useState } from "react";
 import api from "../api/api";
+import { errorAlert, successAlert } from "../utils/alerts";
 
 export default function Register({ onSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
 
   const submit = async (e) => {
     e.preventDefault();
@@ -12,9 +12,14 @@ export default function Register({ onSuccess }) {
       const res = await api.post("/auth/register", { email, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data));
+
+      successAlert("Account created successfully!");
+
       onSuccess(res.data);
-    } catch {
-      setError("Registration failed");
+    } catch (err) {
+      errorAlert(
+        err.response?.data?.message || "Registration failed. Please try again."
+      );
     }
   };
 
@@ -34,12 +39,6 @@ export default function Register({ onSuccess }) {
           placeholder="Password"
           onChange={(e) => setPassword(e.target.value)}
         />
-
-        {error && (
-          <p className="text-rose-500 bg-rose-50 p-3 rounded-lg text-sm">
-            {error}
-          </p>
-        )}
 
         <button className="btn-primary w-full">Register</button>
       </form>

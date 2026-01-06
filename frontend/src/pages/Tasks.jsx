@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
 import api from "../api/api";
 import TaskModal from "../components/TaskModal";
+import { errorAlert, successAlert, confirmDelete } from "../utils/alerts";
 
 export default function Tasks() {
+  const [editingTask, setEditingTask] = useState(null);
+
   const [tasks, setTasks] = useState([]);
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -30,14 +33,66 @@ export default function Tasks() {
   };
 
   const createTask = async (data) => {
-    await api.post("/tasks", {
-      title: data.title,
-      isDone: data.isDone,
-      assignedUserId: data.assigneeId,
-    });
+    try {
+      await api.post("/tasks", {
+        title: data.title,
+        isDone: data.isDone,
+        assignedUserId: data.assigneeId,
+      });
 
-    setShowModal(false);
-    fetchTasks();
+      successAlert("Task successfully created.");
+
+      setShowModal(false);
+      fetchTasks();
+    } catch (err) {
+      errorAlert(err.response.data || "Something went wrong while creating task.");
+    }
+  };
+
+  const updateTask = async (data) => {
+    try {
+      await api.put(`/tasks/${editingTask.id}`, {
+        title: data.title,
+        isDone: data.isDone,
+        assignedUserId: data.assigneeId,
+      });
+
+      successAlert("Task successfully updated.");
+
+      setEditingTask(null);
+      setShowModal(false);
+      fetchTasks();
+    } catch (err) {
+      if (err.response?.status === 403) {
+        errorAlert(
+          err.response.data ||
+            "You are not allowed to update this task, because you are not the creator or assignee."
+        );
+      } else {
+        errorAlert("Something went wrong while updating the task.");
+      }
+    }
+  };
+
+  const deleteTask = async (taskId) => {
+    const result = await confirmDelete();
+    if (!result.isConfirmed) return;
+
+    try {
+      await api.delete(`/tasks/${taskId}`);
+
+      successAlert("Task deleted successfully");
+
+      fetchTasks();
+    } catch (err) {
+      if (err.response?.status === 403) {
+        errorAlert(
+          err.response.data || "You are not allowed to delete this task."
+        );
+      } else {
+        errorAlert("Something went wrong while deleting.");
+      }
+    }
   };
 
   if (loading) {
@@ -64,6 +119,29 @@ export default function Tasks() {
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {tasks.map((task) => (
             <div key={task.id} className="card p-5">
+              <div className="flex justify-end gap-2">
+                {/* Edit */}
+                <button
+                  onClick={() => {
+                    setEditingTask(task);
+                    setShowModal(true);
+                  }}
+                  className="text-indigo-600 hover:text-indigo-800 cursor-pointer"
+                  title="Edit"
+                >
+                  ✏️
+                </button>
+
+                {/* Delete */}
+                <button
+                  onClick={() => deleteTask(task.id)}
+                  className="text-red-600 hover:text-red-800 cursor-pointer"
+                  title="Delete"
+                >
+                  🗑️
+                </button>
+              </div>
+
               <h3 className="font-medium">{task.title}</h3>
               <p className="text-sm mt-2">
                 Status:{" "}
@@ -108,11 +186,22 @@ export default function Tasks() {
 
       <TaskModal
         isOpen={showModal}
-        onClose={() => setShowModal(false)}
-        onSubmit={createTask}
+        onClose={() => {
+          setShowModal(false);
+          setEditingTask(null);
+        }}
+        onSubmit={editingTask ? updateTask : createTask}
         users={users}
-        initialData={{ title: "", isDone: false, assigneeId: "" }}
-        submitLabel="Create"
+        initialData={
+          editingTask
+            ? {
+                title: editingTask.title,
+                isDone: editingTask.isDone,
+                assigneeId: editingTask.assignedUserId,
+              }
+            : { title: "", isDone: false, assigneeId: "" }
+        }
+        submitLabel={editingTask ? "Update" : "Create"}
       />
     </main>
   );
