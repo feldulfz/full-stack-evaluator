@@ -1,0 +1,13 @@
+# Use postgres/example user/password credentials
+
+services:
+
+  db:
+    image: postgres
+    restart: always
+    ports:
+      - "5432:5432"    
+    environment:
+      POSTGRES_DB: full_stack_evaluator
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: example
