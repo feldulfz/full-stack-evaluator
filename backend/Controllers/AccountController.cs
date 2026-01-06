@@ -2,12 +2,16 @@ using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Security.Cryptography;
+using System.Text;
 using System.Threading.Tasks;
-using API.DTOs;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+using task_manager_api.DTOs;
+using task_manager_api.Extensions;
+using task_manager_api.Interfaces;
 using TaskManager.Data;
 using TaskManager.Models;
 
@@ -15,57 +19,58 @@ namespace task_manager_api.Controllers
 {
     [ApiController]
     [Route("auth")]
-    public class AccountController : ControllerBase
+    public class AccountController(ApplicationDbContext context, ITokenService tokenService) : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
-        private readonly PasswordHasher<User> _hasher = new();
-
-        public AccountController(ApplicationDbContext context)
-        {
-            _context = context;
-        }
-
         [HttpPost("register")]
-        public async Task<IActionResult> Register(RegisterDto dto)
+        public async Task<ActionResult<UserDto>> Register(RegisterDto registerDto)
         {
-            var exists = await _context.Users.AnyAsync(u => u.Email == dto.Email);
-            if (exists)
-                return BadRequest("Email already exists");
+            if (await EmailExists(registerDto.Email))
+            {
+                return BadRequest("Email is already taken");
+            }
+
+            using var hmac = new HMACSHA512();                   
 
             var user = new User
             {
-                Email = dto.Email
+                Email = registerDto.Email,
+                PasswordHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(registerDto.Password)),
+                PasswordSalt = hmac.Key
             };
 
-            user.PasswordHash = _hasher.HashPassword(user, dto.Password);
+            context.Users.Add(user);
+            await context.SaveChangesAsync();
 
-            _context.Users.Add(user);
-            await _context.SaveChangesAsync();
-
-            return Ok("User registered");
+            return user.ToDto(tokenService);
         }
 
         [HttpPost("login")]
-        public async Task<IActionResult> Login(LoginDto dto)
+        public async Task<ActionResult<UserDto>> Login(LoginDto loginDto)
         {
-            var user = await _context.Users.FirstOrDefaultAsync(u => u.Email == dto.Email);
+            var user = await context.Users.SingleOrDefaultAsync(x => x.Email.ToLower() == loginDto.Email.ToLower());
+
             if (user == null)
-                return Unauthorized("Invalid credentials");
-
-            var result = _hasher.VerifyHashedPassword(
-                user,
-                user.PasswordHash,
-                dto.Password
-            );
-
-            if (result == PasswordVerificationResult.Failed)
-                return Unauthorized("Invalid credentials");
-
-            return Ok(new
             {
-                user.Id,
-                user.Email
-            });
-        }
+                return Unauthorized("Invalid email");
+            }
+
+            using var hmac = new HMACSHA512(user.PasswordSalt);
+
+            var computedHash = hmac.ComputeHash(Encoding.UTF8.GetBytes(loginDto.Password));
+
+            for (int i = 0; i < computedHash.Length; i++)
+            {
+                if (computedHash[i] != user.PasswordHash[i])
+                {
+                    return Unauthorized("Invalid password");
+                }
+            }
+            return user.ToDto(tokenService);
+        }        
+
+        private async Task<bool> EmailExists(string email)
+        {
+            return await context.Users.AnyAsync(x => x.Email.ToLower() == email.ToLower());
+        }        
     }
 }

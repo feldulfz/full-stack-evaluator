@@ -11,8 +11,8 @@ using TaskManager.Data;
 namespace task_manager_api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250804134735_Init")]
-    partial class Init
+    [Migration("20260106110144_UpdateTaskUserRelation")]
+    partial class UpdateTaskUserRelation
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -61,9 +61,13 @@ namespace task_manager_api.Migrations
                         .IsRequired()
                         .HasColumnType("text");
 
-                    b.Property<string>("PasswordHash")
+                    b.Property<byte[]>("PasswordHash")
                         .IsRequired()
-                        .HasColumnType("text");
+                        .HasColumnType("bytea");
+
+                    b.Property<byte[]>("PasswordSalt")
+                        .IsRequired()
+                        .HasColumnType("bytea");
 
                     b.HasKey("Id");
 

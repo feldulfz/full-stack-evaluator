@@ -1,23 +1,18 @@
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Threading.Tasks;
-
 using TaskManager.Models;
 using TaskManager.Data;
 using task_manager_api.DTOs;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 namespace TaskManager.API
 {
+    [Authorize]
     [ApiController]
     [Route("tasks")]
-    public class TasksController : ControllerBase
+    public class TasksController(ApplicationDbContext context) : ControllerBase
     {
-        private readonly ApplicationDbContext _context;
-
-        public TasksController(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+        private readonly ApplicationDbContext _context = context;
 
         [HttpGet]
         public async Task<IActionResult> GetAll()
@@ -41,32 +36,34 @@ namespace TaskManager.API
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTaskDto dto)
         {
-            var userExists = await _context.Users.AnyAsync(u => u.Id == dto.UserId);
-            if (!userExists)
-                return BadRequest("User does not exist.");
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
             var task = new TaskItem
             {
                 Title = dto.Title,
                 IsDone = dto.IsDone,
-                UserId = dto.UserId
+                UserId = userId
             };
 
             _context.Tasks.Add(task);
             await _context.SaveChangesAsync();
 
             return CreatedAtAction(nameof(GetById), new { id = task.Id }, task);
-        }        
+        }
 
-        [HttpPut("{id}")] 
+        [HttpPut("{id}")]
         public async Task<IActionResult> Update(int id, [FromBody] UpdateTaskDto updated)
         {
+            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
             var task = await _context.Tasks.FindAsync(id);
+            
             if (task == null) return NotFound();
+
+            if (task.UserId != userId) return Forbid();
 
             task.Title = updated.Title;
             task.IsDone = updated.IsDone;
-            task.UserId = updated.UserId;
 
             await _context.SaveChangesAsync();
 

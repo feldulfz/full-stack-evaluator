@@ -7,7 +7,7 @@ namespace task_manager_api.DTOs
 {
     public class CreateTaskDto
     {
-        public string Title { get; set; } = string.Empty;
+        public string Title { get; set; } = "";
         public bool IsDone { get; set; }
         public int UserId { get; set; }
     }
