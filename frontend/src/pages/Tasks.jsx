@@ -1,48 +1,119 @@
 import { useEffect, useState } from "react";
 import api from "../api/api";
+import TaskModal from "../components/TaskModal";
 
 export default function Tasks() {
   const [tasks, setTasks] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
-    api
-      .get("/tasks")
-      .then((res) => {
-        setTasks(res.data);
-        setLoading(false);
-      })
-      .catch((err) => {
-        setLoading(false);
-        if (err.response?.status === 401) {
-          setError("Unauthorized. Please login again.");
-        } else {
-          setError("Failed to load tasks.");
-        }
-      });
+    fetchTasks();
+    fetchUsers();
   }, []);
 
-  if (loading) return <p>Loading tasks...</p>;
-  if (error) return <p>{error}</p>;
+  const fetchTasks = async () => {
+    const res = await api.get("/tasks");
+    setTasks(res.data);
+    setLoading(false);
+  };
+
+  const fetchUsers = async () => {
+    try {
+      const res = await api.get("/users");
+      setUsers(res.data);
+    } catch {
+      setUsers([]);
+    }
+  };
+
+  const createTask = async (data) => {
+    await api.post("/tasks", {
+      title: data.title,
+      isDone: data.isDone,
+      assignedUserId: data.assigneeId,
+    });
+
+    setShowModal(false);
+    fetchTasks();
+  };
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[60vh]">
+        <span className="text-indigo-600 animate-pulse">Loading tasks…</span>
+      </div>
+    );
+  }
 
   return (
-    <div>
-      <h2>My Tasks</h2>
+    <main className="max-w-6xl mx-auto px-6 py-10">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-2xl font-semibold">Tasks</h2>
+
+        <button onClick={() => setShowModal(true)} className="btn-primary">
+          + New Task
+        </button>
+      </div>
 
       {tasks.length === 0 ? (
-        <p>No tasks found.</p>
+        <div className="text-center text-zinc-500 mt-20">No tasks yet ✨</div>
       ) : (
-        <ul>
+        <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {tasks.map((task) => (
-            <li key={task.id}>
-              <span>
-                {task.title} {task.isDone ? "✔" : ""}
-              </span>
-            </li>
+            <div key={task.id} className="card p-5">
+              <h3 className="font-medium">{task.title}</h3>
+              <p className="text-sm mt-2">
+                Status:{" "}
+                <span
+                  className={
+                    task.isDone ? "text-emerald-600" : "text-indigo-600"
+                  }
+                >
+                  {task.isDone ? "Done" : "Pending"}
+                </span>
+              </p>
+              <p className="text-sm mt-2">
+                Assign To:{" "}
+                <span
+                  className={
+                    task.assignedUserEmail ? "text-emerald-600" : "text-red-600"
+                  }
+                >
+                  {task.assignedUserEmail
+                    ? task.assignedUserEmail
+                    : "Unassigned"}
+                </span>
+              </p>
+              <p className="text-sm mt-2">
+                Created By:{" "}
+                <span
+                  className={
+                    task.createdByUserEmail
+                      ? "text-emerald-600"
+                      : "text-red-600"
+                  }
+                >
+                  {task.createdByUserEmail
+                    ? task.createdByUserEmail
+                    : "Unassigned"}
+                </span>
+              </p>
+            </div>
           ))}
-        </ul>
+        </div>
       )}
-    </div>
+
+      <TaskModal
+        isOpen={showModal}
+        onClose={() => setShowModal(false)}
+        onSubmit={createTask}
+        users={users}
+        initialData={{ title: "", isDone: false, assigneeId: "" }}
+        submitLabel="Create"
+      />
+    </main>
   );
 }

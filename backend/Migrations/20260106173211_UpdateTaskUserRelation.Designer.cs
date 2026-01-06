@@ -11,7 +11,7 @@ using TaskManager.Data;
 namespace task_manager_api.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20260106110144_UpdateTaskUserRelation")]
+    [Migration("20260106173211_UpdateTaskUserRelation")]
     partial class UpdateTaskUserRelation
     {
         /// <inheritdoc />
@@ -32,6 +32,9 @@ namespace task_manager_api.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<int>("CreatedByUserId")
+                        .HasColumnType("integer");
+
                     b.Property<bool>("IsDone")
                         .HasColumnType("boolean");
 
@@ -42,9 +45,16 @@ namespace task_manager_api.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
+                    b.Property<int?>("UserId1")
+                        .HasColumnType("integer");
+
                     b.HasKey("Id");
 
+                    b.HasIndex("CreatedByUserId");
+
                     b.HasIndex("UserId");
+
+                    b.HasIndex("UserId1");
 
                     b.ToTable("Tasks");
                 });
@@ -76,11 +86,23 @@ namespace task_manager_api.Migrations
 
             modelBuilder.Entity("TaskManager.Models.TaskItem", b =>
                 {
-                    b.HasOne("TaskManager.Models.User", "User")
-                        .WithMany("Tasks")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
+                    b.HasOne("TaskManager.Models.User", "CreatedByUser")
+                        .WithMany()
+                        .HasForeignKey("CreatedByUserId")
+                        .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
+
+                    b.HasOne("TaskManager.Models.User", "User")
+                        .WithMany()
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("TaskManager.Models.User", null)
+                        .WithMany("Tasks")
+                        .HasForeignKey("UserId1");
+
+                    b.Navigation("CreatedByUser");
 
                     b.Navigation("User");
                 });

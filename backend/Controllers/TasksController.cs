@@ -1,5 +1,8 @@
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
+
 using TaskManager.Models;
 using TaskManager.Data;
 using task_manager_api.DTOs;
@@ -17,8 +20,23 @@ namespace TaskManager.API
         [HttpGet]
         public async Task<IActionResult> GetAll()
         {
-            
-            var tasks = await _context.Tasks.ToListAsync();
+            var tasks = await _context.Tasks
+                .Include(t => t.User)
+                .Include(t => t.CreatedByUser)
+                .Select(t => new TaskResponseDto
+                {
+                    Id = t.Id,
+                    Title = t.Title,
+                    IsDone = t.IsDone,
+
+                    AssignedUserId = t.UserId,
+                    AssignedUserEmail = t.User.Email,
+
+                    CreatedByUserId = t.CreatedByUserId,
+                    CreatedByUserEmail = t.CreatedByUser.Email
+                })
+                .ToListAsync();
+
             return Ok(tasks);
         }
 
@@ -36,13 +54,21 @@ namespace TaskManager.API
         [HttpPost]
         public async Task<IActionResult> Create([FromBody] CreateTaskDto dto)
         {
-            var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+            var creatorId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
+
+            // Validate assigned user exists
+            var assignedUserExists = await _context.Users
+                .AnyAsync(u => u.Id == dto.AssignedUserId);
+
+            if (!assignedUserExists)
+                return BadRequest("Assigned user does not exist.");
 
             var task = new TaskItem
             {
                 Title = dto.Title,
                 IsDone = dto.IsDone,
-                UserId = userId
+                UserId = dto.AssignedUserId,
+                CreatedByUserId = creatorId
             };
 
             _context.Tasks.Add(task);
@@ -57,7 +83,7 @@ namespace TaskManager.API
             var userId = int.Parse(User.FindFirstValue(ClaimTypes.NameIdentifier));
 
             var task = await _context.Tasks.FindAsync(id);
-            
+
             if (task == null) return NotFound();
 
             if (task.UserId != userId) return Forbid();
@@ -81,6 +107,6 @@ namespace TaskManager.API
 
             return NoContent();
         }
-        
+
     }
 }

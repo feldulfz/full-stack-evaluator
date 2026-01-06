@@ -1,48 +1,48 @@
 import { useState } from "react";
 import api from "../api/api";
 
-export default function Register({ onRegister }) {
+export default function Register({ onSuccess }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  const submit = async (e) => {
     e.preventDefault();
     try {
-      const res = await api.post("/auth/register", {
-        email,
-        password,
-      });
-
+      const res = await api.post("/auth/register", { email, password });
       localStorage.setItem("token", res.data.token);
       localStorage.setItem("user", JSON.stringify(res.data));
-
-      onRegister(res.data);
+      onSuccess(res.data);
     } catch {
       setError("Registration failed");
     }
   };
 
   return (
-    <form onSubmit={handleSubmit}>
-      <h2>Register</h2>
+    <div className="min-h-screen flex items-center justify-center px-4">
+      <form onSubmit={submit} className="card p-10 w-full max-w-md space-y-6">
+        <h1 className="text-3xl font-semibold text-center">Create account</h1>
 
-      <input
-        placeholder="Email"
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-      />
+        <input
+          className="input"
+          placeholder="Email"
+          onChange={(e) => setEmail(e.target.value)}
+        />
+        <input
+          className="input"
+          type="password"
+          placeholder="Password"
+          onChange={(e) => setPassword(e.target.value)}
+        />
 
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
+        {error && (
+          <p className="text-rose-500 bg-rose-50 p-3 rounded-lg text-sm">
+            {error}
+          </p>
+        )}
 
-      <button type="submit">Register</button>
-
-      {error && <p>{error}</p>}
-    </form>
+        <button className="btn-primary w-full">Register</button>
+      </form>
+    </div>
   );
 }
