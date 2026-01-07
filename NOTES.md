@@ -87,7 +87,7 @@ Benefits:
 - Clean separation of concerns across controllers, services, and DTOs
 - Production-ready structure aligned with real-world backend standards
 
-
+---
 
 ## Frontend Implementation
 
@@ -177,4 +177,74 @@ The frontend is organized for scalability and maintainability:
 - Secure session handling with JWT
 - Consistent UX with confirmations and feedback
 - Clean integration with the backend API
+
+---
+
+## Visuals
+
+### HomePage
+
+![TODOFLASK_1](NOTESImages/TODOFLASK_1.png 'TODOFLASK_1')
+
+### Register User Page
+
+![TODOFLASK_2](NOTESImages/TODOFLASK_2.png 'TODOFLASK_2')
+
+![TODOFLASK_3](NOTESImages/TODOFLASK_3.png 'TODOFLASK_3')
+
+![TODOFLASK_4](NOTESImages/TODOFLASK_4.png 'TODOFLASK_4')
+
+### Dashboard (Tasklist Page)
+
+![TODOFLASK_5](NOTESImages/TODOFLASK_5.png 'TODOFLASK_5')
+
+### Create Task (Add Title, Select Assignee, Select Status)
+
+![TODOFLASK_6](NOTESImages/TODOFLASK_6.png 'TODOFLASK_6')
+
+![TODOFLASK_7](NOTESImages/TODOFLASK_7.png 'TODOFLASK_7')
+
+![TODOFLASK_8](NOTESImages/TODOFLASK_8.png 'TODOFLASK_8')
+
+### Update task (Update Title, Update Assignee, or Update Status)
+
+![TODOFLASK_9](NOTESImages/TODOFLASK_9.png 'TODOFLASK_9')
+
+![TODOFLASK_10](NOTESImages/TODOFLASK_10.png 'TODOFLASK_10')
+
+### Login to other user & create task (Only authenticated user can create a task)
+
+![TODOFLASK_11](NOTESImages/TODOFLASK_11.png 'TODOFLASK_11')
+
+![TODOFLASK_12](NOTESImages/TODOFLASK_12.png 'TODOFLASK_12')
+
+![TODOFLASK_13](NOTESImages/TODOFLASK_13.png 'TODOFLASK_13')
+
+### Only the creator of task can delete his/her created task (I tried to delete juan@gmail.com task from maria@gmail.com account)
+
+![TODOFLASK_14](NOTESImages/TODOFLASK_14.png 'TODOFLASK_14')
+
+![TODOFLASK_15](NOTESImages/TODOFLASK_15.png 'TODOFLASK_15')
+
+### Only the assigned user or the creator can edit a task (I tried to update juan@gmail.com task from maria@gmail.com account)
+
+![TODOFLASK_16](NOTESImages/TODOFLASK_16.png 'TODOFLASK_16')
+
+![TODOFLASK_17](NOTESImages/TODOFLASK_17.png 'TODOFLASK_17')
+
+## Update task assignned to juan@gmail.com created by maria@gmail.com
+
+![TODOFLASK_18](NOTESImages/TODOFLASK_18.png 'TODOFLASK_18')
+
+![TODOFLASK_19](NOTESImages/TODOFLASK_19.png 'TODOFLASK_19')
+
+![TODOFLASK_20](NOTESImages/TODOFLASK_20.png 'TODOFLASK_20')
+
+## Tried to delete maria@gmail.com created task from juan@gmail.com account
+
+![TODOFLASK_21](NOTESImages/TODOFLASK_21.png 'TODOFLASK_21')
+
+![TODOFLASK_22](NOTESImages/TODOFLASK_22.png 'TODOFLASK_22')
+
+
 

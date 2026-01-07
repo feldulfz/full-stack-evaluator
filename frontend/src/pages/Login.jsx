@@ -23,7 +23,7 @@ export default function Login({ onSuccess }) {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4">
+    <div className="mt-50 flex items-center justify-center px-4">
       <form onSubmit={submit} className="card p-10 w-full max-w-md space-y-6">
         <h1 className="text-3xl font-semibold text-center">Welcome back</h1>
 
